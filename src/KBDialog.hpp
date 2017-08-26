@@ -46,7 +46,7 @@ public:
         //unsigned char* font = stbi_load( "5271font.png", &stb_width, &stb_height, &stb_bpp, 1 );
 
         // Wyse Font
-        char font_path[] = "wy700font.png";
+        char font_path[] = "/boot/KeyBox/wy700font.png";
         unsigned char* font_stb_bmp = stbi_load(font_path, &stb_width, &stb_height, &stb_bpp, 1 );
         if (!font_stb_bmp) {
             fprintf(stderr, "missing font file %s\n", font_path);
