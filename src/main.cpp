@@ -9,7 +9,8 @@
 void validate_args(int argc, char * const argv[]);
 void exec_command(int argc, char * const argv[]);
 
-const char * Mesg = nullptr;
+const char * Mesg  = nullptr;
+bool         DEBUG = false;
 
 int main(int argc, char * const argv[])
 {
@@ -35,8 +36,8 @@ int main(int argc, char * const argv[])
         exit(1);
     }
 
-    srvr.send_msg("kb-req");
-    srvr.recv_ack();
+    srvr.send_msg("kb-req");        D("Sent kb-req");
+    srvr.recv_ack();                D("Received ack");
 
     while (true)
     {
@@ -70,6 +71,8 @@ void arg_help()
     fprintf(stderr, "usage: kb-req 'message' -- <command> [<args>]\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "   ex: kb-req 'Allow ssh login?' -- /bin/bash -l\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "       Set DEBUG env var for debug messages.\n");
     exit(1);
 }
 
@@ -83,4 +86,7 @@ void validate_args(int argc, char * const argv[])
         arg_help();
 
     Mesg = argv[1];
+
+    if (getenv("DEBUG"))
+        DEBUG = true;
 }
