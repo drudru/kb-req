@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-#include "NXGeom.hpp"
+#include "KBScreen.hpp"
 #include "KBDialog.hpp"
 
 
@@ -16,15 +16,7 @@ int main(int argc, char * const argv[])
 {
     validate_args(argc, argv);
 
-    // Render to /dev/fb1
-    //
-    int fbfd = open("/dev/fb1", O_RDWR);
-
-    NXRect screen_rect = {0, 0, 320, 240};
-    int screen_datasize = screen_rect.size.w * screen_rect.size.h * 2;
-    void * fbp = mmap(0, screen_datasize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
-    close(fbfd);
-    NXCanvas screen { NXBitmap{(uint8_t *)fbp, screen_rect, NXColorChan::RGB565} }; 
+    KBScreen screen;
 
     // Connect to Unix domain socket for events
     auto srvr = NXUnixPacketSocket::CreateClient("/tmp/kb-gpio");

@@ -3,22 +3,16 @@
 
 #include "common.h"
 
-#include "NXCanvas.hpp"
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
-#include "stb_image.h"
+#include "KBScreen.hpp"
 
 #include "NXUnixPacketSocket.hpp"
 
 struct KBDialog
 {
-    NXCanvas           *  canvas     = nullptr;
+    KBScreen           * _screen     = nullptr;
+    NXCanvas           * _canvas     = nullptr;
     NXUnixPacketSocket * _events     = nullptr;
 private:
-    NXRect      * screen_rect = nullptr;
-    NXFontAtlas * font        = nullptr;
-    NXFontAtlas * bold_font   = nullptr;
 
     U8 curr_choice;        
     U8 last_choice;        
@@ -27,70 +21,11 @@ private:
     NXColor bg;
 
 public:
-    KBDialog(NXCanvas * cnvs, NXUnixPacketSocket * evts)
+    KBDialog(KBScreen * screen, NXUnixPacketSocket * evts)
     {
-        canvas = cnvs;
+        _screen = screen;
+        _canvas = screen->canvas();
         _events = evts;
-
-        // https://en.wikipedia.org/wiki/Video_Graphics_Array#Color_palette
-        bg = NXColor{   0,   0, 170, 255}; // Blue
-        fg = NXColor{ 255, 255,  85, 255}; // Yellow
-        canvas->state.bg = bg;
-        canvas->state.fg = fg;
-        canvas->state.mono_color_txform = true;
-
-        screen_rect = &cnvs->bitmap.rect;
-
-        // Load image with 1 byte per pixel
-        int stb_width, stb_height, stb_bpp;
-        //unsigned char* font = stbi_load( "5271font.png", &stb_width, &stb_height, &stb_bpp, 1 );
-
-        // Wyse Font
-        char font_path[] = "/boot/KeyBox/wy700font.png";
-        unsigned char* font_stb_bmp = stbi_load(font_path, &stb_width, &stb_height, &stb_bpp, 1 );
-        if (!font_stb_bmp) {
-            fprintf(stderr, "missing font file %s\n", font_path);
-            exit(1);
-        }
-
-        NXBitmap * font_bmp    = nullptr;
-        int16_t width  = stb_width;
-        int16_t height = stb_height;
-        int8_t  chans  = stb_bpp;
-        font_bmp =  new NXBitmap { (uint8_t *)font_stb_bmp, {0, 0, width, height}, NXColorChan::GREY1 };
-        //printf("font: %d x %d\n", width, height);
-
-        // Invert the Font Atlas
-        {
-            U8 * tmp_mem = (U8 *)malloc(width * height);
-            memset(tmp_mem, 0xff, width * height);
-            NXBitmap tmp_bmp =  { tmp_mem, {0, 0, width, height}, NXColorChan::GREY1 };
-
-            NXCanvasROP tmp_rop = canvas->state.rop;
-            canvas->state.rop = NXCanvasROP::XOR;
-
-            NXBlit::blit(&tmp_bmp, &font_bmp->rect, // src
-                         font_bmp, &font_bmp->rect, // dst
-                         &canvas->state);
-
-            canvas->state.rop = tmp_rop;
-            free(tmp_mem);
-        }
-
-        font = new NXFontAtlas();
-        font->atlas = font_bmp;
-        font->rect  = { { 0, 128 }, { 512, 128 } };
-        font->size  = { 32, 8 };
-        font->init();
-
-        bold_font = new NXFontAtlas();
-        bold_font->atlas = font_bmp;
-        bold_font->rect  = { { 0, 0 }, { 512, 128 } };
-        bold_font->size  = { 32, 8 };
-        bold_font->init();
-
-        if (false)
-            fprintf(stderr, "font char: %d x %d\n", bold_font->char_size.w, bold_font->char_size.h);
     }
 
     ~KBDialog()
@@ -105,6 +40,8 @@ public:
         draw_bkgnd();
 
         draw_message(message);
+
+        _screen->flush();
 
         _events->send_msg("sysbeep");
         _events->send_msg("delaysleep");
@@ -160,19 +97,19 @@ public:
 
     void draw_bkgnd()
     {
-        canvas->fill_rect(screen_rect, canvas->state.bg);
+        _canvas->clear();
 
         // Text Rect Grid
-        canvas->draw_font_rect(font, NXRect{{0,0},{20,15}});
+        _canvas->draw_font_rect(_screen->font, _screen->text_rect);
 
-        NXPoint pt = screen_rect->origin;
-        pt.y += (14) * font->char_size.h;
+        NXPoint pt = _screen->screen_rect.origin;
+        pt.y += (_screen->text_rect.size.h) * _screen->font->char_size.h;
 
-        pt.x += ( 2) * font->char_size.w;
-        canvas->draw_font(font, pt, "no");
+        pt.x += ( 2) * _screen->font->char_size.w;
+        _canvas->draw_font(_screen->font, pt, "no");
 
-        pt.x += (14) * font->char_size.w;
-        canvas->draw_font(font, pt, "yes");
+        pt.x += (14) * _screen->font->char_size.w;
+        _canvas->draw_font(_screen->font, pt, "yes");
     }
 
     void draw_message(const char * message)
@@ -181,9 +118,9 @@ public:
 
         NXPoint pt = {0, 0};
 
-        pt.x = ( 2) * font->char_size.w;
-        pt.y = ( 3) * font->char_size.h;
+        pt.x = ( 2) * _screen->font->char_size.w;
+        pt.y = ( 2) * _screen->font->char_size.h;
 
-        canvas->draw_font(font, pt, message);
+        _canvas->draw_font(_screen->font, pt, message);
     }
 };
