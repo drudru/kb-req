@@ -100,16 +100,16 @@ public:
         _canvas->clear();
 
         // Text Rect Grid
-        _canvas->draw_font_rect(_screen->font, _screen->text_rect);
+        _canvas->draw_font_rect(&_screen->font, _screen->text_rect);
 
         NXPoint pt = _screen->screen_rect.origin;
-        pt.y += (_screen->text_rect.size.h) * _screen->font->char_size.h;
+        pt.y += (_screen->text_rect.size.h) * _screen->font.char_size.h;
 
-        pt.x += ( 2) * _screen->font->char_size.w;
-        _canvas->draw_font(_screen->font, pt, "no");
+        pt.x += ( 2) * _screen->font.char_size.w;
+        _canvas->draw_font(&_screen->font, pt, "no");
 
-        pt.x += (14) * _screen->font->char_size.w;
-        _canvas->draw_font(_screen->font, pt, "yes");
+        pt.x += (14) * _screen->font.char_size.w;
+        _canvas->draw_font(&_screen->font, pt, "yes");
     }
 
     void draw_message(const char * message)
@@ -118,9 +118,9 @@ public:
 
         NXPoint pt = {0, 0};
 
-        pt.x = ( 2) * _screen->font->char_size.w;
-        pt.y = ( 2) * _screen->font->char_size.h;
+        pt.x = ( 2) * _screen->font.char_size.w;
+        pt.y = ( 2) * _screen->font.char_size.h;
 
-        _canvas->draw_font(_screen->font, pt, message);
+        _canvas->draw_font(&_screen->font, pt, message);
     }
 };
