@@ -4,6 +4,9 @@
 #include "common.h"
 
 #include "KBScreen.hpp"
+#include "KBTextBox.hpp"
+#include "KBListBox.hpp"
+#include "NXConstStringList.hpp"
 
 #include "NXUnixPacketSocket.hpp"
 
@@ -39,60 +42,37 @@ public:
 
         draw_bkgnd();
 
-        draw_message(message);
-
-        _screen->flush();
-
         _events->send_msg("sysbeep");
         _events->send_msg("delaysleep");
 
-        // event loop
-        while (true)
-        {
-            _events->send_msg("wait");
-            auto msg = _events->recv_msg();
+        NXRect rc_left  = _screen->text_rect.inset(1);
+        NXRect rc_right = rc_left;
 
-            if (false)
-                fprintf(stderr, "msg %s\n", msg._str);
+        // Need a split rect routine
+        rc_left.size.w -= 5;  // Shrink left
 
-            if (msg == "b0")
-            {
-                break;
-            }
-            else
-            if (msg == "b1")
-            {
-                break;
-            }
-            else
-            if (msg == "b2")
-            {
-                break;
-            }
-            else
-            if (msg == "b3")
-            {
-                return 1;
-            }
-            else
-            if (msg == "wake")
-            {
-            }
-            else
-            if (msg == "tick")
-            {
-                timer++;
-                if (timer > 30)
-                    break;
-            }
-            else
-            {
-                fprintf(stderr, "KBDialog unhandled msg\n");
-            }
-        } // event loop
-        
-        // Return cancel
-        return 0;
+        // Then take remainder for rc_right
+        rc_right.size.w = 5;
+        rc_right.origin.x = rc_left.origin.x + rc_left.size.w;
+
+        KBTextBox text_box(_screen, message);
+        text_box._text_rect = rc_left;
+        text_box.draw();
+
+        KBListBox list_box(_screen, _events);
+        list_box._text_rect = rc_right;
+
+        NXConstStringList choices;
+        const char * menu_strs[] = {
+            " no  ",
+            " yes ",
+            NULL
+        };
+        choices.set_list(menu_strs);
+
+        int choice = list_box.go(&choices, false, 30);
+
+        return choice;
     }
 
     void draw_bkgnd()
@@ -112,15 +92,4 @@ public:
         _canvas->draw_font(&_screen->font, pt, "yes");
     }
 
-    void draw_message(const char * message)
-    {
-        U8 index = 0;
-
-        NXPoint pt = {0, 0};
-
-        pt.x = ( 2) * _screen->font.char_size.w;
-        pt.y = ( 2) * _screen->font.char_size.h;
-
-        _canvas->draw_font(&_screen->font, pt, message);
-    }
 };
