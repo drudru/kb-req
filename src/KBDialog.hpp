@@ -61,11 +61,12 @@ public:
 
         KBListBox list_box(_screen, _events);
         list_box._text_rect = rc_right;
+        list_box._padding = 2;
 
         NXConstStringList choices;
         const char * menu_strs[] = {
-            " no  ",
-            " yes ",
+            "no",
+            "yes",
             NULL
         };
         choices.set_list(menu_strs);
